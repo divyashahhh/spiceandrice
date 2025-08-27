@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "tiktokdemo",
-    "entryPoint": "./index.js",
+    "entryPoint": "./index.tsx",
     "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
