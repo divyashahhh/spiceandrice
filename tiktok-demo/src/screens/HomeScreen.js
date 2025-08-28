@@ -6,11 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { height, width } = Dimensions.get('window');
 
-const MOCK_VIDEOS = [
-  { id: '1', uri: 'https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4', description: 'Big Buck Bunny — demo clip', likes: 1234, comments: 56, user: '@bunny' },
-  { id: '2', uri: 'https://www.w3schools.com/html/mov_bbb.mp4', description: 'Bunny again — sample video', likes: 9876, comments: 321, user: '@demo' },
-  { id: '3', uri: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4', description: 'Sintel trailer — open movie', likes: 345, comments: 22, user: '@sintel' }
-];
 
 function VideoCard({ item, isActive }) {
   const videoRef = useRef(null);

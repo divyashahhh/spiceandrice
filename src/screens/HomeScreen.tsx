@@ -1,16 +1,15 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Dimensions, StyleSheet, FlatList, Pressable, Text } from 'react-native';
 import { Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import DailyCreditPopup from '../components/DailyCreditPopup';
-import { useTikTokCredits } from '../contexts/TikTokCreditContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { height, width } = Dimensions.get('window');
 
 type FeedItem = {
   id: string;
-  uri: string;
+  source: number | { uri: string };
   description: string;
   likes: number;
   comments: number;
@@ -18,20 +17,25 @@ type FeedItem = {
 };
 
 const MOCK_VIDEOS: FeedItem[] = [
-  { id: '1', uri: 'https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4', description: 'Big Buck Bunny — demo clip', likes: 1234, comments: 56, user: '@bunny' },
-  { id: '2', uri: 'https://www.w3schools.com/html/mov_bbb.mp4', description: 'Bunny again — sample video', likes: 9876, comments: 321, user: '@demo' },
-  { id: '3', uri: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4', description: 'Sintel trailer — open movie', likes: 345, comments: 22, user: '@sintel' }
+  { id: '1', source: require('../../tiktok-demo/assets/video1.mp4'), description: 'Sample clip 1 — local asset', likes: 1234, comments: 56, user: '@local' },
+  { id: '2', source: require('../../tiktok-demo/assets/video2.mp4'), description: 'Sample clip 2 — local asset', likes: 9876, comments: 321, user: '@local' },
+  { id: '3', source: require('../../tiktok-demo/assets/video3.mp4'), description: 'Sample clip 3 — local asset', likes: 345, comments: 22, user: '@local' },
+  { id: '4', source: { uri: 'https://media.w3.org/2010/05/bunny/movie.mp4' }, description: 'Classic bunny clip for testing', likes: 812, comments: 40, user: '@testing' },
+  { id: '5', source: { uri: 'https://media.w3.org/2010/05/video/movie_300.mp4' }, description: 'Sample movie 300px', likes: 120, comments: 9, user: '@sample' },
+  { id: '6', source: { uri: 'https://media.w3.org/2010/05/video/movie_700.mp4' }, description: 'Sample movie 700px', likes: 640, comments: 77, user: '@sample2' },
+  { id: '7', source: { uri: 'https://media.w3.org/2010/05/sintel/trailer.mp4' }, description: 'Sintel standard trailer', likes: 2200, comments: 145, user: '@open' }
 ];
 
 function VideoCard({ item, isActive }: { item: FeedItem; isActive: boolean }) {
   const videoRef = useRef<Video>(null);
   const [liked, setLiked] = useState(false);
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.card}>
       <Video
         ref={videoRef}
-        source={{ uri: item.uri }}
+        source={item.source}
         style={StyleSheet.absoluteFill}
         resizeMode="cover"
         isLooping
@@ -53,9 +57,9 @@ function VideoCard({ item, isActive }: { item: FeedItem; isActive: boolean }) {
           <Text style={styles.countText}>Share</Text>
         </Pressable>
       </View>
-      <View style={styles.bottomMeta}>
+      <View style={[styles.bottomMeta, { bottom: Math.max(140, 24 + insets.bottom) }]}>
         <Text style={styles.userText}>{item.user}</Text>
-        <Text style={styles.descText} numberOfLines={2}>{item.description}</Text>
+        <Text style={styles.descText} numberOfLines={3}>{item.description}</Text>
       </View>
     </View>
   );
@@ -63,19 +67,6 @@ function VideoCard({ item, isActive }: { item: FeedItem; isActive: boolean }) {
 
 export default function HomeScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showCreditPopup, setShowCreditPopup] = useState(false);
-  const { canClaimDaily } = useTikTokCredits();
-
-  // Show popup when component mounts if user can claim daily credit
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (canClaimDaily) {
-        setShowCreditPopup(true);
-      }
-    }, 2000); // Show after 2 seconds
-
-    return () => clearTimeout(timer);
-  }, [canClaimDaily]);
 
   return (
     <View style={styles.container}>
@@ -94,12 +85,7 @@ export default function HomeScreen() {
           setActiveIndex(newIndex);
         }}
       />
-      
-      {/* Daily Credit Popup */}
-      <DailyCreditPopup
-        visible={showCreditPopup}
-        onClose={() => setShowCreditPopup(false)}
-      />
+
     </View>
   );
 }

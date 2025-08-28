@@ -13,7 +13,7 @@ import ShopScreen from './src/screens/ShopScreen';
 import CreateScreen from './src/screens/CreateScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
-import { TikTokCreditProvider } from './src/contexts/TikTokCreditContext';
+import { CreditsProvider } from './src/context/CreditsContext';
 
 const TikTokTheme = {
   ...DefaultTheme,
@@ -32,7 +32,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <TikTokCreditProvider>
+        <CreditsProvider>
           <NavigationContainer theme={TikTokTheme}>
             <StatusBar style="light" />
             <Tab.Navigator
@@ -104,7 +104,7 @@ export default function App() {
               />
             </Tab.Navigator>
           </NavigationContainer>
-        </TikTokCreditProvider>
+        </CreditsProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTikTokCredits } from '../contexts/TikTokCreditContext';
+import { useCredits } from '../context/CreditsContext';
 
 const { width } = Dimensions.get('window');
 
@@ -174,45 +174,17 @@ export default function ShopScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('products');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
-  const { credits, spendCredits } = useTikTokCredits();
+  const { credits, addCredits } = useCredits();
 
   const handlePurchase = (product: Product) => {
-    const requiredCredits = Math.ceil(product.tiktokCredits);
-    
-    if (credits >= requiredCredits) {
-      spendCredits(requiredCredits);
-      Alert.alert(
-        'Purchase Successful! 🎉',
-        `You spent ${requiredCredits} TikTok credits on ${product.name}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowProductModal(false);
-              setSelectedProduct(null);
-            }
-          }
-        ]
-      );
-    } else {
-      Alert.alert(
-        'Insufficient Credits',
-        `You need ${requiredCredits} TikTok credits to purchase this item. You currently have ${credits} credits.`,
-        [
-          {
-            text: 'Get More Credits',
-            onPress: () => {
-              // Navigate to profile to claim daily credits
-              setShowProductModal(false);
-            }
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          }
-        ]
-      );
-    }
+    addCredits(product.price);
+    Alert.alert(
+      'Purchase Successful! 🎉',
+      `You earned ${product.price.toFixed(2)} TikTok credits cashback.`,
+      [
+        { text: 'OK', onPress: () => { setShowProductModal(false); setSelectedProduct(null); } }
+      ]
+    );
   };
 
   const renderProductCard = ({ item }: { item: Product }) => (
@@ -374,7 +346,7 @@ export default function ShopScreen() {
         <View style={styles.headerRight}>
           <View style={styles.creditDisplay}>
             <Ionicons name="diamond" size={20} color="#F62A54" />
-            <Text style={styles.creditCount}>{credits}</Text>
+            <Text style={styles.creditCount}>{credits.toFixed(2)}</Text>
           </View>
           <TouchableOpacity style={styles.cartButton}>
             <Ionicons name="cart-outline" size={24} color="#fff" />
@@ -458,34 +430,11 @@ export default function ShopScreen() {
                       </Text>
                     </LinearGradient>
                   </View>
-                  
-                  <View style={styles.creditRequirement}>
-                    <Ionicons name="diamond" size={20} color="#F62A54" />
-                    <Text style={styles.creditRequirementText}>
-                      Required: {Math.ceil(selectedProduct.tiktokCredits)} TikTok Credits
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.creditBalance}>
-                    <Text style={styles.creditBalanceText}>
-                      Your Balance: {credits} credits
-                    </Text>
-                  </View>
-                  
                   <TouchableOpacity 
-                    style={[
-                      styles.buyButton, 
-                      credits < Math.ceil(selectedProduct.tiktokCredits) && styles.buyButtonDisabled
-                    ]}
+                    style={styles.buyButton}
                     onPress={() => handlePurchase(selectedProduct)}
-                    disabled={credits < Math.ceil(selectedProduct.tiktokCredits)}
                   >
-                    <Text style={styles.buyButtonText}>
-                      {credits >= Math.ceil(selectedProduct.tiktokCredits) 
-                        ? 'Buy with Credits' 
-                        : 'Insufficient Credits'
-                      }
-                    </Text>
+                    <Text style={styles.buyButtonText}>Buy Now</Text>
                   </TouchableOpacity>
                 </View>
               </>
