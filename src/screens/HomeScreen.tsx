@@ -1,8 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, Dimensions, StyleSheet, FlatList, Pressable, Text } from 'react-native';
 import { Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import DailyCreditPopup from '../components/DailyCreditPopup';
+import { useTikTokCredits } from '../contexts/TikTokCreditContext';
 
 const { height, width } = Dimensions.get('window');
 
@@ -61,6 +63,19 @@ function VideoCard({ item, isActive }: { item: FeedItem; isActive: boolean }) {
 
 export default function HomeScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showCreditPopup, setShowCreditPopup] = useState(false);
+  const { canClaimDaily } = useTikTokCredits();
+
+  // Show popup when component mounts if user can claim daily credit
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (canClaimDaily) {
+        setShowCreditPopup(true);
+      }
+    }, 2000); // Show after 2 seconds
+
+    return () => clearTimeout(timer);
+  }, [canClaimDaily]);
 
   return (
     <View style={styles.container}>
@@ -78,6 +93,12 @@ export default function HomeScreen() {
           const newIndex = Math.round(e.nativeEvent.contentOffset.y / height);
           setActiveIndex(newIndex);
         }}
+      />
+      
+      {/* Daily Credit Popup */}
+      <DailyCreditPopup
+        visible={showCreditPopup}
+        onClose={() => setShowCreditPopup(false)}
       />
     </View>
   );

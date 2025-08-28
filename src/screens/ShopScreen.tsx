@@ -7,10 +7,12 @@ import {
   Image, 
   Dimensions,
   FlatList,
-  Modal
+  Modal,
+  Alert
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTikTokCredits } from '../contexts/TikTokCreditContext';
 
 const { width } = Dimensions.get('window');
 
@@ -172,6 +174,46 @@ export default function ShopScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('products');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
+  const { credits, spendCredits } = useTikTokCredits();
+
+  const handlePurchase = (product: Product) => {
+    const requiredCredits = Math.ceil(product.tiktokCredits);
+    
+    if (credits >= requiredCredits) {
+      spendCredits(requiredCredits);
+      Alert.alert(
+        'Purchase Successful! 🎉',
+        `You spent ${requiredCredits} TikTok credits on ${product.name}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowProductModal(false);
+              setSelectedProduct(null);
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Insufficient Credits',
+        `You need ${requiredCredits} TikTok credits to purchase this item. You currently have ${credits} credits.`,
+        [
+          {
+            text: 'Get More Credits',
+            onPress: () => {
+              // Navigate to profile to claim daily credits
+              setShowProductModal(false);
+            }
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
+    }
+  };
 
   const renderProductCard = ({ item }: { item: Product }) => (
     <TouchableOpacity 
@@ -203,6 +245,10 @@ export default function ShopScreen() {
         </View>
         <View style={styles.creditsInfo}>
           <Text style={styles.creditsText}>🎁 {item.tiktokCredits.toFixed(2)} TikTok Credits Back!</Text>
+        </View>
+        <View style={styles.creditCost}>
+          <Ionicons name="diamond" size={16} color="#F62A54" />
+          <Text style={styles.creditCostText}>Cost: {Math.ceil(item.tiktokCredits)} credits</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -325,9 +371,15 @@ export default function ShopScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>TikTok Shop</Text>
-        <TouchableOpacity style={styles.cartButton}>
-          <Ionicons name="cart-outline" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <View style={styles.creditDisplay}>
+            <Ionicons name="diamond" size={20} color="#F62A54" />
+            <Text style={styles.creditCount}>{credits}</Text>
+          </View>
+          <TouchableOpacity style={styles.cartButton}>
+            <Ionicons name="cart-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tabs */}
@@ -406,8 +458,34 @@ export default function ShopScreen() {
                       </Text>
                     </LinearGradient>
                   </View>
-                  <TouchableOpacity style={styles.buyButton}>
-                    <Text style={styles.buyButtonText}>Buy Now</Text>
+                  
+                  <View style={styles.creditRequirement}>
+                    <Ionicons name="diamond" size={20} color="#F62A54" />
+                    <Text style={styles.creditRequirementText}>
+                      Required: {Math.ceil(selectedProduct.tiktokCredits)} TikTok Credits
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.creditBalance}>
+                    <Text style={styles.creditBalanceText}>
+                      Your Balance: {credits} credits
+                    </Text>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.buyButton, 
+                      credits < Math.ceil(selectedProduct.tiktokCredits) && styles.buyButtonDisabled
+                    ]}
+                    onPress={() => handlePurchase(selectedProduct)}
+                    disabled={credits < Math.ceil(selectedProduct.tiktokCredits)}
+                  >
+                    <Text style={styles.buyButtonText}>
+                      {credits >= Math.ceil(selectedProduct.tiktokCredits) 
+                        ? 'Buy with Credits' 
+                        : 'Insufficient Credits'
+                      }
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -439,6 +517,25 @@ const styles = StyleSheet.create({
   },
   cartButton: {
     padding: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  creditDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(246, 42, 84, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  creditCount: {
+    color: '#F62A54',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -569,6 +666,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  creditCost: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  creditCostText: {
+    color: '#F62A54',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  creditRequirement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(246, 42, 84, 0.1)',
+    borderRadius: 8,
+  },
+  creditRequirementText: {
+    color: '#F62A54',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  creditBalance: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  creditBalanceText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   orderCard: {
     flexDirection: 'row',
@@ -777,6 +909,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  buyButtonDisabled: {
+    backgroundColor: '#666',
   },
 });
 
