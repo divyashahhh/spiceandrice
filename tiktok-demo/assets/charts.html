@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Badge Tiers - Pyramid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #f0f2f5 0%, #dcdcdc 100%); /* Subtle grey gradient */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .tiktok-header-bg {
+            background: linear-gradient(135deg, #FF0050, #00F2EA, #FE2C55); /* More dynamic TikTok gradient */
+        }
+        .container-card {
+            background-color: white;
+            border-radius: 2rem; /* Even more rounded */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            width: 100%;
+            max-width: 6xl; /* Larger overall container */
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .tier-card {
+            border-radius: 1.25rem; /* Rounded corners for individual tier cards */
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+.tier-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.15);
+        }
+        .badge-icon {
+            font-size: 4rem; /* Even larger icons */
+            line-height: 1;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2)); /* Icon shadow */
+        }
+        .credits-text {
+            font-size: 2.5rem; /* Large credit text */
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        /* Pyramid structure styling */
+        .pyramid-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 2rem 0;
+        }
+        .pyramid-tier {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 1.5rem; /* Spacing between tiers */
+        }
+
+        /* Tier specific styling and backgrounds */
+        .gold-tier-card {
+            background: linear-gradient(145deg, #FFD700 0%, #FFEA00 100%); /* Gold gradient */
+            color: #4a4a4a;
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+            width: 60%; /* Smaller width for top of pyramid */
+        }
+        .silver-tier-card {
+            background: linear-gradient(145deg, #C0C0C0 0%, #E0E0E0 100%); /* Silver gradient */
+            color: #4a4a4a;
+            box-shadow: 0 8px 20px rgba(192, 192, 192, 0.4);
+            width: 80%; /* Medium width */
+        }
+        .bronze-tier-card {
+            background: linear-gradient(145deg, #CD7F32 0%, #D8BF90 100%); /* Bronze gradient */
+            color: #4a4a4a;
+            box-shadow: 0 8px 20px rgba(205, 127, 50, 0.4);
+            width: 100%; /* Full width for base */
+        }
+
+        /* Text colors for better contrast */
+        .gold-tier-card h3, .gold-tier-card p, .gold-tier-card .credits-text { color: #5a4a00; }
+        .silver-tier-card h3, .silver-tier-card p, .silver-tier-card .credits-text { color: #3a3a3a; }
+        .bronze-tier-card h3, .bronze-tier-card p, .bronze-tier-card .credits-text { color: #6a4a2a; }
+
+        .section-title {
+            font-size: 3rem; /* Larger section titles */
+            font-weight: 800;
+            color: #2c3e50; /* Darker text for contrast */
+            margin-bottom: 2.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+        .section-description {
+            font-size: 1.15rem;
+            color: #555;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            text-align: center;
+        }
+
+/* Responsive adjustments */
+        @media (max-width: 768px) {
+            .pyramid-tier > div { /* Apply to direct children of pyramid-tier (the tier cards) */
+                width: 90% !important; /* Make all cards nearly full width on mobile */
+                max-width: none;
+                flex-direction: column;
+                text-align: center;
+            }
+            .tier-card {
+                padding: 1rem;
+            }
+            .badge-icon {
+                font-size: 3rem;
+                margin-bottom: 0.5rem;
+            }
+            .credits-text {
+                font-size: 2rem;
+            }
+            .section-title {
+                font-size: 2.5rem;
+            }
+            .section-description {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-card">
+        <div class="tiktok-header-bg text-white text-center p-8 rounded-t-[2rem]">
+            <h1 class="text-6xl font-extrabold mb-3 tracking-tight">TikTok Badges</h1>
+            <p class="text-2xl opacity-95">Elevate Your Status & Access Premium Content</p>
+        </div>
+
+        <div class="p-8 md:p-12">
+            <!-- Creator Certification Section -->
+            <div class="pyramid-section">
+                <h2 class="section-title">🌟 Creator Certification</h2>
+                <p class="section-description">Climb the ranks! Reach these credit milestones to become a certified creator and unlock exclusive platform recognition.</p>
+
+                <div class="pyramid-tier">
+                    <div class="tier-card gold-tier-card">
+                        <div class="flex items-center space-x-6 md:space-x-8">
+                            <span class="badge-icon gold-color">👑</span>
+                            <div>
+                                <h3 class="text-3xl font-bold">Gold Badge</h3>
+                                <p class="text-xl">Mr. Beast</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="credits-text">50K Credits</p>
+                            <p class="text-lg font-semibold">to Certify</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pyramid-tier">
+                    <div class="tier-card silver-tier-card">
+                        <div class="flex items-center space-x-6 md:space-x-8">
+                            <span class="badge-icon silver-color">💎</span>
+                            <div>
+                                <h3 class="text-3xl font-bold">Silver Badge</h3>
+                                <p class="text-xl">Atharva
+                                    
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="credits-text">10K Credits</p>
+                            <p class="text-lg font-semibold">to Certify</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pyramid-tier">
+                    <div class="tier-card bronze-tier-card">
+                        <div class="flex items-center space-x-6 md:space-x-8">
+                            <span class="badge-icon bronze-color">🥉</span>
+                            <div>
+                                <h3 class="text-3xl font-bold">Bronze Badge</h3>
+                                <p class="text-xl">Jason Lee</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="credits-text">2K Credits</p>
+                            <p class="text-lg font-semibold">to Certify</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-16 border-t-4 border-gray-200 rounded-full">
+
+            <!-- Consumer Badge Access Section -->
+            <div class="pyramid-section">
+                <h2 class="section-title">🚀 Consumer Badge Access</h2>
+                <p class="section-description">Earn credits to reach these badges! Unlock exclusive content from creators in the respective tier and all tiers below.</p>
+
+                <div class="pyramid-tier">
+                    <div class="tier-card gold-tier-card">
+                        <div class="flex items-center space-x-6 md:space-x-8">
+                            <span class="badge-icon gold-color">👑</span>
+                            <div>
+                                <h3 class="text-3xl font-bold">Gold Badge</h3>
+                                <p class="text-xl">Premium Content</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="credits-text">1K Credits</p>
+                            <p class="text-lg font-semibold">to Earn</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pyramid-tier">
+                    <div class="tier-card silver-tier-card">
+                        <div class="flex items-center space-x-6 md:space-x-8">
+                            <span class="badge-icon silver-color">💎</span>
+                            <div>
+                                <h3 class="text-3xl font-bold">Silver Badge</h3>
+                                <p class="text-xl">Enhanced Content</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="credits-text">250 Credits</p>
+                            <p class="text-lg font-semibold">to Earn</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pyramid-tier">
+                    <div class="tier-card bronze-tier-card">
+                        <div class="flex items-center space-x-6 md:space-x-8">
+                            <span class="badge-icon bronze-color">🥉</span>
+                            <div>
+                                <h3 class="text-3xl font-bold">Bronze Badge</h3>
+                                <p class="text-xl">Basic Content</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="credits-text">50 Credits</p>
+                            <p class="text-lg font-semibold">to Earn</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
