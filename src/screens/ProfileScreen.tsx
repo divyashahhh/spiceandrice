@@ -12,43 +12,40 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCredits } from '../context/CreditsContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTikTokCredits } from '../contexts/TikTokCreditContext';
+import BadgePopup from '../components/BadgePopup';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
-// Optional: provide icon hooks here. Replace the empty strings with require(...) to your assets when ready.
-const tierIconFor = (group: 'creator' | 'consumer', key: string): any | undefined => {
-  const map: Record<string, any> = {
-    'creator-certified': require('../../tiktok-demo/assets/high-quality.png'),
-    'creator-bronze': require('../../tiktok-demo/assets/coin.png'),
-    'creator-silver': require('../../tiktok-demo/assets/coin (2).png'),
-    'creator-gold': require('../../tiktok-demo/assets/coin (1).png'),
-    'consumer-bronze': require('../../tiktok-demo/assets/coin.png'),
-    'consumer-silver': require('../../tiktok-demo/assets/coin (1).png'),
-    'consumer-gold': require('../../tiktok-demo/assets/coin (2).png'),
-  };
-  return map[`${group}-${key}`];
-};
-
-// Tier thresholds (can be adjusted later)
+// Tier thresholds and data
 const TIERS = {
   creator: [
-    { key: 'certified', label: 'Certified', threshold: 100, subtitle: 'Eligible to create', icon: tierIconFor('creator','certified') },
-    { key: 'bronze', label: 'Bronze', threshold: 500, subtitle: '60% creator / 40% TikTok', icon: tierIconFor('creator','bronze') },
-    { key: 'silver', label: 'Silver', threshold: 1500, subtitle: '70% creator / 30% TikTok', icon: tierIconFor('creator','silver') },
-    { key: 'gold', label: 'Gold', threshold: 3500, subtitle: '85% creator', icon: tierIconFor('creator','gold') },
+    { key: 'certified', label: 'Certified', threshold: 100, subtitle: 'Eligible to create', icon: undefined },
+    { key: 'bronze', label: 'Bronze', threshold: 500, subtitle: '60% creator / 40% TikTok', icon: undefined },
+    { key: 'silver', label: 'Silver', threshold: 1500, subtitle: '70% creator / 30% TikTok', icon: undefined },
+    { key: 'gold', label: 'Gold', threshold: 3500, subtitle: '85% creator / 0% TikTok', icon: undefined },
   ],
   consumer: [
-    { key: 'bronze', label: 'Bronze', threshold: 500, subtitle: 'Early access perks', icon: tierIconFor('consumer','bronze') },
-    { key: 'silver', label: 'Silver', threshold: 1500, subtitle: 'Priority deals', icon: tierIconFor('consumer','silver') },
-    { key: 'gold', label: 'Gold', threshold: 3500, subtitle: 'VIP benefits', icon: tierIconFor('consumer','gold') },
+    { key: 'basic', label: 'Basic', threshold: 0, subtitle: 'Access to basic features', icon: undefined },
+    { key: 'bronze', label: 'Bronze', threshold: 100, subtitle: 'Premium content access', icon: undefined },
+    { key: 'silver', label: 'Silver', threshold: 500, subtitle: 'Exclusive content', icon: undefined },
+    { key: 'gold', label: 'Gold', threshold: 1000, subtitle: 'VIP benefits', icon: undefined },
   ],
 };
 
 type Tier = { key: string; label: string; threshold: number; subtitle: string; icon?: any };
 
+function getConsumerTier(credits: number) {
+  let chosen = TIERS.consumer[0];
+  for (const t of TIERS.consumer) {
+    if (credits >= t.threshold) chosen = t;
+  }
+  return chosen;
+}
+
+// Visual tier track components
 function TrackShell({ children, minHeight }: { children: React.ReactNode; minHeight: number }) {
   return (
     <LinearGradient colors={[ '#F62A54', '#28D7F6' ]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.trackGradient, { minHeight }] }>
@@ -111,9 +108,17 @@ function TierTrack({ title, tiers, credits, minHeight }: { title: string; tiers:
 }
 
 export default function ProfileScreen() {
-  const { credits } = useCredits();
+  const { credits, lastClaimDate, canClaimDaily, claimDailyCredit } = useTikTokCredits();
   const [selectedTab, setSelectedTab] = useState(0);
+  const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const currentTier = getConsumerTier(credits);
+
+  // Calculate a shared minimum height so both tracks appear equal length
+  const NODE_ROW_EST = 96; // approximate per-tier row height incl. spacing
+  const HEADER_EST = 40;   // track header area
+  const maxCount = Math.max(TIERS.creator.length, TIERS.consumer.length);
+  const sharedMinHeight = HEADER_EST + NODE_ROW_EST * maxCount + 24; // padding
 
   const tabs = [
     { id: 0, icon: 'grid-outline', label: 'Posts' },
@@ -123,17 +128,38 @@ export default function ProfileScreen() {
     { id: 4, icon: 'heart-outline', label: 'Favorites' },
   ];
 
-  // Calculate a shared minimum height so both tracks appear equal length
-  const NODE_ROW_EST = 96; // approximate per-tier row height incl. spacing
-  const HEADER_EST = 40;   // track header area
-  const maxCount = Math.max(TIERS.creator.length, TIERS.consumer.length);
-  const sharedMinHeight = HEADER_EST + NODE_ROW_EST * maxCount + 24; // padding
+  const handleClaimDaily = () => {
+    if (canClaimDaily) {
+      claimDailyCredit();
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.topLeft}>
+          <Text style={styles.time}>1:46</Text>
+          <Ionicons name="notifications" size={16} color="#000" style={styles.bellIcon} />
+          <Ionicons name="person-add" size={20} color="#000" />
+        </View>
+        <View style={styles.topRight}>
+          <View style={styles.statusBar}>
+            <Ionicons name="cellular" size={12} color="#000" />
+            <Ionicons name="wifi" size={12} color="#000" />
+            <Ionicons name="battery-full" size={16} color="#000" />
+          </View>
+          <View style={styles.topIcons}>
+            <Ionicons name="people" size={20} color="#000" />
+            <Ionicons name="share-outline" size={20} color="#000" />
+            <Ionicons name="menu" size={20} color="#000" />
+          </View>
+        </View>
+      </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           {/* Profile Picture */}
@@ -142,6 +168,9 @@ export default function ProfileScreen() {
               source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face' }}
               style={styles.profilePicture}
             />
+            <View style={styles.storyBubble}>
+              <Text style={styles.storyText}>Spill the tea</Text>
+            </View>
             <View style={styles.addStoryButton}>
               <Ionicons name="add" size={16} color="#fff" />
             </View>
@@ -149,13 +178,17 @@ export default function ProfileScreen() {
 
           {/* Username and Handle */}
           <View style={styles.userInfo}>
-            <Text style={styles.username}>pixlaravatar</Text>
+            <View style={styles.usernameRow}>
+              <Ionicons name="lock-closed" size={16} color="#000" />
+              <Text style={styles.username}>pixlaravatar</Text>
+              <Ionicons name="chevron-down" size={16} color="#000" />
+            </View>
             <Text style={styles.handle}>@pixlaravatar</Text>
           </View>
 
           {/* Edit Button */}
           <Pressable style={styles.editButton}>
-            <Text style={styles.editButtonText}>Edit profile</Text>
+            <Text style={styles.editButtonText}>Edit</Text>
           </Pressable>
 
           {/* Stats */}
@@ -174,7 +207,13 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* TikTok Credits Section */}
+          {/* Add Bio Button */}
+          <Pressable style={styles.addBioButton}>
+            <Ionicons name="add" size={16} color="#000" />
+            <Text style={styles.addBioText}>Add bio</Text>
+          </Pressable>
+
+          {/* Consumer Credit Section */}
           <TouchableOpacity activeOpacity={0.8} onPress={() => setShowCreditsModal(true)}>
             <View style={styles.creditsSection}>
               <View style={styles.creditHeader}>
@@ -187,6 +226,41 @@ export default function ProfileScreen() {
               </View>
             </View>
           </TouchableOpacity>
+
+          {/* Daily Credit Claim */}
+          <View style={styles.dailyClaimSection}>
+            <Pressable
+              style={[styles.claimButton, !canClaimDaily && styles.claimButtonDisabled]}
+              onPress={handleClaimDaily}
+              disabled={!canClaimDaily}
+            >
+              <Ionicons name="gift" size={16} color={canClaimDaily ? "#fff" : "#999"} />
+              <Text style={[styles.claimButtonText, !canClaimDaily && styles.claimButtonTextDisabled]}>
+                {canClaimDaily ? 'Claim Daily Credit' : 'Already Claimed Today'}
+              </Text>
+            </Pressable>
+            
+            {lastClaimDate && (
+              <Text style={styles.lastClaimText}>
+                Last claimed: {new Date(lastClaimDate).toLocaleDateString()}
+              </Text>
+            )}
+          </View>
+
+          {/* Credit Spending History */}
+          <View style={styles.spendingSection}>
+            <Text style={styles.sectionTitle}>Recent Spending</Text>
+            <View style={styles.spendingItem}>
+              <Ionicons name="bag" size={20} color="#F62A54" />
+              <Text style={styles.spendingText}>JBL Headphones</Text>
+              <Text style={styles.spendingAmount}>-5 credits</Text>
+            </View>
+            <View style={styles.spendingItem}>
+              <Ionicons name="gift" size={20} color="#F62A54" />
+              <Text style={styles.spendingText}>Teeth Whitening Kit</Text>
+              <Text style={styles.spendingAmount}>-7 credits</Text>
+            </View>
+          </View>
         </View>
 
         {/* Content Navigation Tabs */}
@@ -199,15 +273,30 @@ export default function ProfileScreen() {
             >
               <Ionicons
                 name={tab.icon as any}
-                size={22}
-                color={selectedTab === tab.id ? '#fff' : 'rgba(255,255,255,0.6)'}
+                size={24}
+                color={selectedTab === tab.id ? '#000' : '#666'}
               />
               {selectedTab === tab.id && <View style={styles.activeTabIndicator} />}
             </Pressable>
           ))}
         </View>
 
-        {/* One sample video thumbnail area */}
+        {/* Notification Banner */}
+        <View style={styles.notificationBanner}>
+          <View style={styles.bannerContent}>
+            <View style={styles.bannerIcon}>
+              <Ionicons name="add" size={16} color="#000" />
+            </View>
+            <Text style={styles.bannerText}>
+              View expired Stories in 'Your private videos'
+            </Text>
+            <Pressable style={styles.bannerClose}>
+              <Ionicons name="close" size={16} color="#000" />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Video Content */}
         <View style={styles.videoGrid}>
           <View style={styles.videoThumbnail}>
             <Image
@@ -217,9 +306,24 @@ export default function ProfileScreen() {
             <View style={styles.videoOverlay}>
               <Text style={styles.videoText}>My favourite planet used to be Earth...</Text>
             </View>
+            <View style={styles.videoStats}>
+              <View style={styles.playCount}>
+                <Ionicons name="play" size={12} color="#fff" />
+                <Text style={styles.playCountText}>110</Text>
+              </View>
+              <View style={styles.videoIcon}>
+                <Ionicons name="square" size={12} color="#fff" />
+              </View>
+            </View>
           </View>
         </View>
       </ScrollView>
+      
+      {/* Badge Popup */}
+      <BadgePopup
+        visible={showBadgePopup}
+        onClose={() => setShowBadgePopup(false)}
+      />
 
       {/* Credits Details Modal */}
       <Modal
@@ -251,14 +355,57 @@ export default function ProfileScreen() {
           </LinearGradient>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
+}
+
+function getTierColors(tierKey: string): [string, string] {
+  switch (tierKey) {
+    case 'platinum': return ['#E5E4E2', '#B4B4B4'];
+    case 'gold': return ['#FFD700', '#FFA500'];
+    case 'silver': return ['#C0C0C0', '#A8A8A8'];
+    default: return ['#CD7F32', '#B8860B'];
+  }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
+  },
+  topLeft: {
+    alignItems: 'flex-start',
+  },
+  time: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  bellIcon: {
+    marginBottom: 4,
+  },
+  topRight: {
+    alignItems: 'flex-end',
+  },
+  statusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  topIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   scrollView: {
     flex: 1,
@@ -266,16 +413,35 @@ const styles = StyleSheet.create({
   profileHeader: {
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   profilePictureContainer: {
     position: 'relative',
     marginBottom: 16,
   },
   profilePicture: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  storyBubble: {
+    position: 'absolute',
+    top: -10,
+    left: -20,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  storyText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
   addStoryButton: {
     position: 'absolute',
@@ -288,111 +454,255 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#000',
+    borderColor: '#fff',
   },
   userInfo: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
   },
   username: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: 'bold',
+    color: '#000',
   },
   handle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
+    color: '#666',
   },
   editButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#f0f0f0',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginBottom: 18,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginBottom: 20,
   },
   editButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: '#000',
   },
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginBottom: 18,
+    marginBottom: 20,
   },
   statItem: {
     alignItems: 'center',
-    paddingHorizontal: 8,
   },
   statNumber: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
+    color: '#666',
+  },
+  addBioButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginBottom: 20,
+  },
+  addBioText: {
+    fontSize: 14,
+    color: '#000',
   },
   creditsSection: {
-    backgroundColor: '#0f0f0f',
+    backgroundColor: '#f8f9fa',
     padding: 16,
     borderRadius: 12,
     width: '100%',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#1f1f1f',
+    borderColor: '#e9ecef',
   },
   creditHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   creditTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#000',
   },
   creditInfo: {
     alignItems: 'center',
+    marginBottom: 16,
   },
   creditAmount: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#F62A54',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   creditLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  tierStatus: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  tierBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  tierLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tierDescription: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  badgeInfoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(246, 42, 84, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  badgeInfoText: {
+    fontSize: 14,
+    color: '#F62A54',
+    fontWeight: '600',
+  },
+  claimButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#F62A54',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  claimButtonDisabled: {
+    backgroundColor: '#e9ecef',
+  },
+  claimButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  claimButtonTextDisabled: {
+    color: '#999',
+  },
+  lastClaimText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+  },
+  spendingSection: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 12,
+  },
+  spendingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  spendingText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+  },
+  spendingAmount: {
+    fontSize: 14,
+    color: '#F62A54',
+    fontWeight: '600',
   },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderColor: '#1f1f1f',
-    backgroundColor: '#0a0a0a',
+    borderBottomColor: '#e0e0e0',
   },
   tab: {
     alignItems: 'center',
     position: 'relative',
-    paddingVertical: 6,
-    width: (width - 32) / 5,
   },
-  activeTab: {},
+  activeTab: {
+    // Active tab styling
+  },
   activeTabIndicator: {
     position: 'absolute',
-    bottom: -6,
-    width: 18,
+    bottom: -16,
+    width: 20,
     height: 2,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     borderRadius: 1,
+  },
+  notificationBanner: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginVertical: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  bannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  bannerIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+  },
+  bannerClose: {
+    padding: 4,
   },
   videoGrid: {
     paddingHorizontal: 16,
@@ -400,8 +710,8 @@ const styles = StyleSheet.create({
   },
   videoThumbnail: {
     width: width - 32,
-    height: 220,
-    borderRadius: 10,
+    height: 200,
+    borderRadius: 8,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -411,7 +721,7 @@ const styles = StyleSheet.create({
   },
   videoOverlay: {
     position: 'absolute',
-    bottom: 12,
+    bottom: 40,
     left: 12,
     right: 12,
   },
@@ -423,56 +733,29 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalContainer: {
-    borderRadius: 14,
-    width: width - 24,
-    maxHeight: '85%',
-    borderWidth: 1,
-    borderColor: '#1f1f1f',
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1f1f1f',
+  videoStats: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  modalTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  totalCreditsBox: {
+  playCount: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(246,42,84,0.1)',
-    borderColor: '#1f1f1f',
-    borderWidth: 1,
-    padding: 12,
-    margin: 16,
-    borderRadius: 10,
+    gap: 4,
   },
-  totalCreditsText: {
+  playCountText: {
     color: '#fff',
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
   },
-  tracksRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  videoIcon: {
+    padding: 4,
   },
+  // Tier track styles
   trackGradient: {
     flex: 1,
     borderRadius: 12,
@@ -503,7 +786,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  trackCreditsText: { color: '#fff', fontSize: 12 },
+  trackCreditsText: { 
+    color: '#fff', 
+    fontSize: 12 
+  },
   nodeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -567,10 +853,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  nodeTitleLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  tierIcon: { width: 20, height: 20, borderRadius: 4 },
-  tierIconPlaceholder: { width: 20, height: 20, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)' },
-  nodeTitle: { color: '#fff', fontWeight: '700' },
+  nodeTitleLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8 
+  },
+  tierIcon: { 
+    width: 20, 
+    height: 20, 
+    borderRadius: 4 
+  },
+  tierIconPlaceholder: { 
+    width: 20, 
+    height: 20, 
+    borderRadius: 4, 
+    backgroundColor: 'rgba(255,255,255,0.08)' 
+  },
+  nodeTitle: { 
+    color: '#fff', 
+    fontWeight: '700' 
+  },
   badgePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -580,10 +882,83 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 12,
   },
-  badgeText: { color: '#0f0', fontSize: 10, fontWeight: '700' },
-  nodeSubtitle: { color: 'rgba(255,255,255,0.7)', marginTop: 4, fontSize: 12 },
-  thresholdRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  thresholdText: { color: '#fff', fontWeight: '600', fontSize: 12 },
+  badgeText: { 
+    color: '#0f0', 
+    fontSize: 10, 
+    fontWeight: '700' 
+  },
+  nodeSubtitle: { 
+    color: 'rgba(255,255,255,0.7)', 
+    marginTop: 4, 
+    fontSize: 12 
+  },
+  thresholdRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    marginTop: 8 
+  },
+  thresholdText: { 
+    color: '#fff', 
+    fontWeight: '600', 
+    fontSize: 12 
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContainer: {
+    borderRadius: 14,
+    width: width - 24,
+    maxHeight: '85%',
+    borderWidth: 1,
+    borderColor: '#1f1f1f',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1f1f1f',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  totalCreditsBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(246,42,84,0.1)',
+    borderColor: '#1f1f1f',
+    borderWidth: 1,
+    padding: 12,
+    margin: 16,
+    borderRadius: 10,
+  },
+  totalCreditsText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  tracksRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  // Daily claim styles
+  dailyClaimSection: {
+    marginBottom: 20,
+    paddingHorizontal: 16,
+  },
 });
 
 

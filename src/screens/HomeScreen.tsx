@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View, Dimensions, StyleSheet, FlatList, Pressable, Text } from 'react-native';
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,7 +37,7 @@ function VideoCard({ item, isActive }: { item: FeedItem; isActive: boolean }) {
         ref={videoRef}
         source={item.source}
         style={StyleSheet.absoluteFill}
-        resizeMode="cover"
+        resizeMode={ResizeMode.COVER}
         isLooping
         shouldPlay={isActive}
         isMuted={!isActive}

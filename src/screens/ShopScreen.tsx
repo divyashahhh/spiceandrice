@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCredits } from '../context/CreditsContext';
+import { useTikTokCredits } from '../contexts/TikTokCreditContext';
 
 const { width } = Dimensions.get('window');
 
@@ -174,7 +174,7 @@ export default function ShopScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('products');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
-  const { credits, addCredits } = useCredits();
+  const { credits, addCredits } = useTikTokCredits();
 
   const handlePurchase = (product: Product) => {
     addCredits(product.price);

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TikTokCreditContextType {
@@ -99,14 +99,14 @@ export const TikTokCreditProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return false;
   };
 
-  const value: TikTokCreditContextType = {
+  const value: TikTokCreditContextType = useMemo(() => ({
     credits,
     lastClaimDate,
     canClaimDaily: canClaimDaily(),
     claimDailyCredit,
     addCredits,
     spendCredits,
-  };
+  }), [credits, lastClaimDate]);
 
   return (
     <TikTokCreditContext.Provider value={value}>
